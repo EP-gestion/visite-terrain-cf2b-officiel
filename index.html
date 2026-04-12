@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Visite terrain — CF2B</title>
+<!-- PWA / iPhone écran d'accueil -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Visite CF2B">
+<meta name="theme-color" content="#1A3A5C">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 84 92' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0 L80 0 Q84 0 84 4 L84 55 Q84 72 62 82 L42 92 L22 82 Q0 72 0 55 L0 4 Q0 0 4 0 Z' fill='%231A3A5C'/%3E%3Ctext x='42' y='52' text-anchor='middle' font-family='Arial' font-size='32' fill='white' font-weight='500'%3EEP%3C/text%3E%3Crect x='14' y='60' width='56' height='3' rx='1.5' fill='%23E8613A'/%3E%3C/svg%3E">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;background:#f0f2f5;color:#222;font-size:15px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+/* ── HEADER ── */
+.header{background:#1A3A5C;color:#fff;padding:10px 16px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:12px}
+.header-logo svg{height:42px;width:auto;display:block;flex-shrink:0}
+.header-text{flex:1;min-width:0}
+.header h1{font-size:15px;font-weight:700;line-height:1.2}
+.header small{color:#E8613A;font-size:11px}
+
+/* ── INFOS VISITE ── */
+.section{background:#fff;margin:8px;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.section-title{background:#1A3A5C;color:#fff;padding:9px 14px;font-size:13px;font-weight:700}
+.field{display:flex;align-items:center;padding:9px 14px;border-bottom:1px solid #eee}
+.field:last-child{border-bottom:none}
+.field label{flex:1;font-size:13px;color:#444;font-weight:500}
+.field input[type=text],.field input[type=date],.field input[type=time],.field input[type=number]{border:1px solid #ccc;border-radius:6px;padding:7px 10px;font-size:13px;width:55%;background:#fafafa}
+.field input:focus{outline:none;border-color:#1A3A5C;background:#fff}
+
+/* ── TABS VÉHICULES ── */
+.tabs-bar{display:flex;background:#fff;margin:8px 8px 0;border-radius:10px 10px 0 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 1px 3px rgba(0,0,0,.08);scrollbar-width:none}
+.tabs-bar::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:12px 16px;font-size:13px;font-weight:700;color:#666;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .15s;user-select:none;-webkit-tap-highlight-color:transparent;position:relative}
+.tab.active{color:#1A3A5C;border-bottom-color:#E8613A;background:#f8f9fb}
+.tab .tab-badge{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;display:none}
+.tab.done .tab-badge{display:block;background:#2E7D32}
+.tab.has-issue .tab-badge{display:block;background:#C62828}
+
+/* ── VL PAGE ── */
+.vl-page{display:none}
+.vl-page.active{display:block}
+.vl-card{background:#fff;margin:0 8px 8px;border-radius:0 0 10px 10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.vl-title{background:#1A3A5C;color:#fff;padding:12px 14px;font-size:15px;font-weight:700}
+.vl-title span{color:#E8613A;font-weight:400;font-size:12px;margin-left:8px}
+.vl-info .field{padding:7px 14px}
+.vl-info .field label{font-weight:600;color:#555;font-size:12px}
+.val{font-size:13px;color:#000;font-weight:600}
+
+/* ── CHECKS ── */
+.legend{display:flex;gap:12px;padding:6px 14px;font-size:11px;color:#888;align-items:center;background:#fff;margin:0 8px;border-bottom:1px solid #eee}
+.legend-dot{width:14px;height:14px;border-radius:3px;display:inline-block;vertical-align:middle;margin-right:2px}
+.check-row{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid #f0f0f0;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;background:#fff;margin:0 8px}
+.check-row:nth-child(odd){background:#f9f9f9}
+.check-row:active{background:#e8e8e8}
+.check-icon{width:28px;height:28px;border:2.5px solid #bbb;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;color:transparent;transition:all .12s;background:#fff}
+.check-row.ok .check-icon{background:#2E7D32;border-color:#2E7D32;color:#fff}
+.check-row.nok .check-icon{background:#C62828;border-color:#C62828;color:#fff}
+.check-status{display:none;font-size:10px;font-weight:700;margin-left:6px;flex-shrink:0;padding:2px 8px;border-radius:4px;letter-spacing:.3px}
+.check-row.ok .check-status.ok-text{display:block;color:#2E7D32;background:#E8F5E9}
+.check-row.nok .check-status.nok-text{display:block;color:#C62828;background:#FFEBEE}
+.check-label{flex:1;margin-left:10px;font-size:13px}
+.check-prefill{font-size:10px;color:#888;display:block;margin-top:1px}
+.check-obs{border:1px solid #ddd;border-radius:6px;padding:5px 7px;font-size:12px;width:80px;flex-shrink:0;margin-left:6px}
+.check-obs:focus{outline:none;border-color:#1A3A5C}
+
+/* ── SYNTHÈSE ── */
+.synthese-card{background:#fff;margin:8px;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.synthese-title{background:#1A3A5C;color:#fff;padding:12px 14px;font-size:14px;font-weight:700}
+.synthese-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px}
+.stat-box{border-radius:8px;padding:12px;text-align:center}
+.stat-box.green{background:#E8F5E9;border:1px solid #C8E6C9}
+.stat-box.red{background:#FFEBEE;border:1px solid #FFCDD2}
+.stat-box.grey{background:#F5F5F5;border:1px solid #E0E0E0}
+.stat-num{font-size:28px;font-weight:800}
+.stat-box.green .stat-num{color:#2E7D32}
+.stat-box.red .stat-num{color:#C62828}
+.stat-box.grey .stat-num{color:#666}
+.stat-label{font-size:11px;color:#666;margin-top:2px}
+.synthese-vl-block{border-top:1px solid #eee;padding:10px 14px}
+.synthese-vl-title{font-size:13px;font-weight:700;color:#1A3A5C;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.synthese-vl-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px}
+.synthese-vl-badge.ok{background:#E8F5E9;color:#2E7D32}
+.synthese-vl-badge.nok{background:#FFEBEE;color:#C62828}
+.synthese-vl-badge.pending{background:#FFF3E0;color:#E65100}
+.synthese-issues{font-size:12px;color:#C62828;margin:4px 0 2px;line-height:1.5}
+.synthese-cr{margin-top:10px;padding:12px 14px;border-top:1px solid #eee}
+.synthese-cr label{font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:6px}
+.synthese-cr textarea{width:100%;border:1px solid #ccc;border-radius:8px;padding:10px;font-size:13px;min-height:120px;resize:vertical;font-family:inherit}
+.synthese-cr textarea:focus{outline:none;border-color:#1A3A5C}
+
+/* ── REMARQUES ── */
+.remarks-block{background:#fff;margin:0 8px;border-bottom:1px solid #eee;padding:10px 14px}
+.remarks-block label{font-size:12px;font-weight:700;color:#333;display:block;margin-bottom:4px}
+.remarks-block textarea{width:100%;border:1px solid #ccc;border-radius:8px;padding:8px 10px;font-size:13px;min-height:60px;resize:vertical;font-family:inherit}
+.remarks-block textarea:focus{outline:none;border-color:#1A3A5C}
+
+/* ── SIGNATURES ── */
+.sig-group{background:#fff;margin:0 8px 10px;border-radius:0 0 10px 10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.sig-row{padding:10px 14px;border-bottom:1px solid #eee}
+.sig-row:last-child{border-bottom:none}
+.sig-row-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.sig-row-title{font-size:12px;font-weight:700;color:#1A3A5C}
+.sig-clear{background:#eee;border:none;color:#666;padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer}
+.sig-clear:active{background:#ddd}
+canvas.sig{width:100%;height:100px;border:2px dashed #ccc;border-radius:8px;background:#fefefe;touch-action:none;display:block}
+canvas.sig.has-sig{border-color:#2E7D32;border-style:solid}
+.sig-note{font-size:10px;color:#999;text-align:center;margin-top:3px}
+
+/* ── NAV BUTTONS ── */
+.nav-bar{display:flex;gap:8px;margin:8px;padding-bottom:20px}
+.btn{flex:1;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;text-align:center}
+.btn-prev{background:#e0e0e0;color:#333}
+.btn-prev:active{background:#ccc}
+.btn-next{background:#1A3A5C;color:#fff}
+.btn-next:active{background:#0d1a30}
+.btn-export{background:#2E7D32;color:#fff}
+.btn-export:active{background:#1B5E20}
+.btn:disabled{opacity:.4;cursor:default}
+
+/* ── COUNTER ── */
+.counter{position:fixed;bottom:14px;left:14px;background:#fff;border:1px solid #ddd;padding:6px 12px;border-radius:50px;font-size:12px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.1);z-index:200}
+
+/* ── PRINT ── */
+@media print{
+  body{background:#fff!important;padding:0;font-size:10px}
+  .header{position:relative!important;padding:6px 10px}
+  .tabs-bar,.nav-bar,.counter,.legend,.sig-clear,.btn,.sig-note{display:none!important}
+  .vl-page{display:block!important;page-break-before:always}
+  .vl-page:first-of-type{page-break-before:auto}
+  .synthese-page{display:block!important;page-break-before:always}
+  .vl-card,.sig-group,.check-row,.remarks-block,.synthese-card{box-shadow:none;margin-left:0;margin-right:0}
+  .vl-card{border:1px solid #ccc}
+  .sig-group{border:1px solid #ccc;border-top:none}
+  .check-row{margin-left:0;margin-right:0;padding:5px 10px}
+  .check-row,.check-row:nth-child(odd){background:#fff!important}
+  .remarks-block{margin-left:0;margin-right:0}
+  canvas.sig{height:80px;border:1px solid #999}
+  .remarks-block textarea{border:1px solid #999;min-height:40px}
+  .field input{border:1px solid #999!important}
+  .section{box-shadow:none;border:1px solid #ccc;margin:4px 0}
+  .print-header-repeat{display:flex!important;align-items:center;gap:8px;background:#1A3A5C;color:#fff;padding:6px 10px;margin-bottom:4px}
+  .print-header-repeat svg{height:28px}
+  .print-header-repeat .phr-text{font-size:10px}
+  .print-header-repeat .phr-title{font-weight:700;font-size:11px}
+  .print-header-repeat .phr-sub{color:#E8613A;font-size:9px}
+  .print-info-repeat{display:block!important;font-size:9px;border:1px solid #ccc;padding:4px 8px;margin-bottom:4px;background:#f9f9f9}
+  .print-info-repeat span{margin-right:12px}
+}
+.print-header-repeat,.print-info-repeat{display:none}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header" id="main-header">
+  <div class="header-logo">
+    <svg viewBox="0 0 84 92" xmlns="http://www.w3.org/2000/svg">
+      <path d="M40 0 L80 0 Q84 0 84 4 L84 55 Q84 72 62 82 L42 92 L22 82 Q0 72 0 55 L0 4 Q0 0 4 0 Z" fill="#1A3A5C"/>
+      <path d="M42 85 L38 55 L46 30 L42 8" fill="none" stroke="#FFF" stroke-width="5" stroke-linecap="round" opacity="0.3"/>
+      <path d="M42 85 L38 55 L46 30 L42 8" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 6"/>
+      <text x="42" y="52" text-anchor="middle" font-family="Arial,sans-serif" font-size="32" fill="#FFF" font-weight="500" letter-spacing="2">EP</text>
+      <rect x="14" y="60" width="56" height="3" rx="1.5" fill="#E8613A"/>
+    </svg>
+  </div>
+  <div class="header-text">
+    <h1>VISITE TERRAIN — CF2B SARL</h1>
+    <small>EP Gestion — Thany SOUDJAY — Licence 2026/06/0000009</small>
+  </div>
+</div>
+
+<!-- ── INFOS VISITE ── -->
+<div class="section">
+  <div class="section-title">INFORMATIONS VISITE</div>
+  <div class="field"><label>Date</label><input type="date" id="visit-date"></div>
+  <div class="field"><label>Heure</label><input type="time" id="visit-time"></div>
+  <div class="field"><label>Lieu</label><input type="text" id="visit-lieu" placeholder="Adresse / lieu"></div>
+</div>
+
+<!-- ── ONGLETS VÉHICULES ── -->
+<div class="tabs-bar" id="tabs-bar"></div>
+
+<!-- ── PAGES VÉHICULES ── -->
+<div id="vehicles"></div>
+
+<!-- ── PAGE SYNTHÈSE ── -->
+<div class="vl-page synthese-page" id="synthese-page"></div>
+
+<div class="counter" id="counter">0 / 0</div>
+
+<script>
+const VL=[
+  {n:"VL1",im:"CP-368-SN",ct:"25/02/2027",marque:"IVECO DAILY",police:"20612545P0009",effet:"30/08/2023"},
+  {n:"VL2",im:"GF-183-CB",ct:"21/08/2027",marque:"IVECO DAILY",police:"20612545P0005",effet:"05/12/2022"},
+  {n:"VL3",im:"AB-301-VZ",ct:"29/05/2027",marque:"IVECO DAILY",police:"20612545P0012",effet:"17/03/2025"},
+  {n:"VL4",im:"BD-711-PX",ct:"29/01/2027",marque:"IVECO DAILY",police:"20612545P0015",effet:"27/05/2025"},
+  {n:"VL5",im:"HA-040-QM",ct:"05/12/2028",marque:"IVECO DAILY",police:"",effet:""},
+  {n:"VL6",im:"HJ-568-TS",ct:"20/03/2030",marque:"",police:"",effet:""},
+];
+
+const checks=[
+  {l:"Copie conforme licence",pf:v=>"N° 2026/06/0000009"},
+  {l:"Carte grise",pf:v=>v.im+(v.marque?" — "+v.marque:"")},
+  {l:"CT en cours de validité",pf:v=>"Valide jusqu'au "+v.ct},
+  {l:"Assurance RC auto",pf:v=>v.police?"Groupama OI — "+v.police:""},
+  {l:"Extincteur",pf:()=>""},{l:"Triangle",pf:()=>""},{l:"Gilet",pf:()=>""},
+  {l:"Pneus AV gauche",pf:()=>""},{l:"Pneus AV droit",pf:()=>""},
+  {l:"Pneus AR gauche",pf:()=>""},{l:"Pneus AR droit",pf:()=>""},
+  {l:"Éclairage AV",pf:()=>""},{l:"Éclairage AR",pf:()=>""},
+  {l:"Freinage",pf:()=>""},{l:"Rétroviseurs",pf:()=>""},
+  {l:"Pare-brise / essuie-glaces",pf:()=>""},
+  {l:"Plaques lisibles (AV+AR)",pf:()=>""},
+  {l:"Carrosserie",pf:()=>""},{l:"Carnet lettres de voiture",pf:()=>""},
+];
+
+const LOGO_SVG=`<svg viewBox="0 0 84 92" xmlns="http://www.w3.org/2000/svg"><path d="M40 0 L80 0 Q84 0 84 4 L84 55 Q84 72 62 82 L42 92 L22 82 Q0 72 0 55 L0 4 Q0 0 4 0 Z" fill="#1A3A5C"/><path d="M42 85 L38 55 L46 30 L42 8" fill="none" stroke="#FFF" stroke-width="5" stroke-linecap="round" opacity="0.3"/><path d="M42 85 L38 55 L46 30 L42 8" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 6"/><text x="42" y="52" text-anchor="middle" font-family="Arial,sans-serif" font-size="32" fill="#FFF" font-weight="500" letter-spacing="2">EP</text><rect x="14" y="60" width="56" height="3" rx="1.5" fill="#E8613A"/></svg>`;
+
+let currentVL=0;
+const tabsBar=document.getElementById('tabs-bar');
+const ctn=document.getElementById('vehicles');
+const totalPerVL=checks.length;
+
+// ── BUILD TABS ──
+VL.forEach((v,i)=>{
+  const tab=document.createElement('div');
+  tab.className='tab'+(i===0?' active':'');
+  tab.innerHTML=`${v.n}<div class="tab-badge"></div>`;
+  tab.onclick=()=>goTo(i);
+  tabsBar.appendChild(tab);
+});
+// Tab Synthèse
+const synthTab=document.createElement('div');
+synthTab.className='tab';
+synthTab.style.cssText='color:#E8613A;border-left:2px solid #eee';
+synthTab.innerHTML='📋 Synthèse';
+synthTab.onclick=()=>goToSynthese();
+tabsBar.appendChild(synthTab);
+
+// ── BUILD VL PAGES ──
+VL.forEach((v,i)=>{
+  let h=`<div class="vl-page${i===0?' active':''}" id="vl-page-${i}">`;
+
+  // Print repeat header
+  h+=`<div class="print-header-repeat">${LOGO_SVG}<div class="phr-text"><div class="phr-title">VISITE TERRAIN — CF2B SARL</div><div class="phr-sub">EP Gestion — Thany SOUDJAY</div></div></div>`;
+  h+=`<div class="print-info-repeat" id="print-info-${i}"></div>`;
+
+  // VL card
+  h+=`<div class="vl-card"><div class="vl-title">${v.n} — ${v.im}${v.marque?' — '+v.marque:''}<span>${i+1}/${VL.length}</span></div>`;
+  h+=`<div class="vl-info">`;
+  h+=`<div class="field"><label>Conducteur</label><input type="text" class="conducteur-input" placeholder="Nom du conducteur"></div>`;
+  h+=`<div class="field"><label>CT valide</label><span class="val">${v.ct}</span></div>`;
+  h+=`<div class="field"><label>Assureur</label>${v.police?'<span class="val">Groupama OI</span>':'<input type="text" placeholder="Assureur">'}</div>`;
+  h+=`<div class="field"><label>N° police</label>${v.police?'<span class="val">'+v.police+'</span>':'<input type="text" placeholder="N° police">'}</div>`;
+  h+=`<div class="field"><label>Effet gar.</label>${v.effet?'<span class="val">'+v.effet+'</span>':'<input type="text" placeholder="Date">'}</div>`;
+  h+=`<div class="field"><label>Km</label><input type="number" placeholder="Kilométrage" inputmode="numeric"></div>`;
+  h+=`</div></div>`;
+
+  // Legend
+  h+=`<div class="legend"><span>1 tap = </span><span class="legend-dot" style="background:#2E7D32"></span> Conforme`;
+  h+=`<span style="margin-left:6px">2 taps = </span><span class="legend-dot" style="background:#C62828"></span> Non conforme`;
+  h+=`<span style="margin-left:6px">3 = reset</span></div>`;
+
+  // Checks
+  checks.forEach((c,ci)=>{
+    const pf=c.pf(v);
+    h+=`<div class="check-row" data-vl="${i}" onclick="tog(this)"><div class="check-icon">✓</div>`;
+    h+=`<div class="check-label">${c.l}${pf?'<span class="check-prefill">'+pf+'</span>':''}</div>`;
+    h+=`<span class="check-status ok-text">Conforme</span><span class="check-status nok-text">Non conforme</span>`;
+    h+=`<input class="check-obs" type="text" placeholder="Obs." onclick="event.stopPropagation()"></div>`;
+  });
+
+  // Remarques
+  h+=`<div class="remarks-block"><label>Remarques / Actions à prévoir :</label><textarea placeholder="Noter ici..."></textarea></div>`;
+
+  // Signatures
+  h+=`<div class="sig-group">`;
+  // GTE
+  h+=`<div class="sig-row"><div class="sig-row-header"><span class="sig-row-title">✍️ GTE — Thany SOUDJAY</span><button class="sig-clear" onclick="clearSig('gte-${i}')">Effacer</button></div><canvas class="sig" id="sig-gte-${i}"></canvas><div class="sig-note">Signer avec le doigt</div></div>`;
+  // Chauffeur
+  h+=`<div class="sig-row"><div class="sig-row-header"><span class="sig-row-title">✍️ CHAUFFEUR</span><button class="sig-clear" onclick="clearSig('chauf-${i}')">Effacer</button></div><canvas class="sig" id="sig-chauf-${i}"></canvas><div class="sig-note">Signer avec le doigt</div></div>`;
+  // Gérant
+  h+=`<div class="sig-row"><div class="sig-row-header"><span class="sig-row-title">✍️ GÉRANT — Abdou TOIHIR</span><button class="sig-clear" onclick="clearSig('gerant-${i}')">Effacer</button></div><canvas class="sig" id="sig-gerant-${i}"></canvas><div class="sig-note">Si présent sur place</div></div>`;
+  h+=`</div>`;
+
+  // Nav buttons
+  h+=`<div class="nav-bar">`;
+  h+=`<button class="btn btn-prev" onclick="goTo(${i-1})" ${i===0?'disabled':''}>← Précédent</button>`;
+  if(i<VL.length-1){
+    h+=`<button class="btn btn-next" onclick="goTo(${i+1})">${VL[i+1].n} →</button>`;
+  } else {
+    h+=`<button class="btn btn-next" style="background:#E8613A" onclick="goToSynthese()">📋 Synthèse →</button>`;
+  }
+  h+=`</div>`;
+
+  h+=`</div>`;
+  ctn.innerHTML+=h;
+});
+
+// ── BUILD SYNTHÈSE PAGE ──
+(function buildSynthese(){
+  const sp=document.getElementById('synthese-page');
+  let h=`<div class="print-header-repeat">${LOGO_SVG}<div class="phr-text"><div class="phr-title">SYNTHÈSE VISITE TERRAIN — CF2B SARL</div><div class="phr-sub">EP Gestion — Thany SOUDJAY</div></div></div>`;
+  h+=`<div class="print-info-repeat" id="print-info-synthese"></div>`;
+  h+=`<div class="synthese-card"><div class="synthese-title">📊 SYNTHÈSE GLOBALE</div>`;
+  h+=`<div class="synthese-stats" id="synthese-stats"></div>`;
+  h+=`<div id="synthese-vl-details"></div></div>`;
+  h+=`<div class="synthese-card" style="margin-top:8px"><div class="synthese-title">📝 COMPTE-RENDU DU GTE</div>`;
+  h+=`<div class="synthese-cr"><label>Observations générales :</label><textarea id="cr-general" placeholder="Résumé de la visite, état général de la flotte, points d'attention..."></textarea></div>`;
+  h+=`<div class="synthese-cr"><label>Actions correctives à mener :</label><textarea id="cr-actions" placeholder="Lister les actions à réaliser, délais, responsables..."></textarea></div>`;
+  h+=`<div class="synthese-cr"><label>Prochaine visite prévue le :</label><input type="date" id="cr-next-visit" style="border:1px solid #ccc;border-radius:6px;padding:8px 10px;font-size:13px;width:100%"></div></div>`;
+  // Signatures
+  h+=`<div class="sig-group" style="margin:8px;border-radius:10px">`;
+  h+=`<div class="sig-row"><div class="sig-row-header"><span class="sig-row-title">✍️ GTE — Thany SOUDJAY</span><button class="sig-clear" onclick="clearSig('gte-synth')">Effacer</button></div><canvas class="sig" id="sig-gte-synth"></canvas><div class="sig-note">Signer avec le doigt</div></div>`;
+  h+=`<div class="sig-row"><div class="sig-row-header"><span class="sig-row-title">✍️ GÉRANT — Abdou TOIHIR</span><button class="sig-clear" onclick="clearSig('gerant-synth')">Effacer</button></div><canvas class="sig" id="sig-gerant-synth"></canvas><div class="sig-note">Si présent sur place</div></div>`;
+  h+=`</div>`;
+  // Nav
+  h+=`<div class="nav-bar">`;
+  h+=`<button class="btn btn-prev" onclick="goTo(${VL.length-1})">← ${VL[VL.length-1].n}</button>`;
+  h+=`<button class="btn btn-export" style="background:#2E7D32" onclick="exportPDF()">📄 Exporter tout en PDF</button>`;
+  h+=`</div>`;
+  sp.innerHTML=h;
+})();
+
+let synthSigsInited=false;
+
+// ── GO TO SYNTHÈSE ──
+function goToSynthese(){
+  document.querySelectorAll('.vl-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('synthese-page').classList.add('active');
+  synthTab.classList.add('active');
+  synthTab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  window.scrollTo({top:0,behavior:'smooth'});
+  updateSynthese();
+  if(!synthSigsInited){
+    synthSigsInited=true;
+    initSig('gte-synth');
+    initSig('gerant-synth');
+  }
+  document.getElementById('counter').textContent='Synthèse';
+}
+
+function updateSynthese(){
+  let totalOk=0,totalNok=0,totalPending=0;
+  let detailsHtml='';
+  VL.forEach((v,i)=>{
+    const page=document.getElementById('vl-page-'+i);
+    const rows=page.querySelectorAll('.check-row');
+    let vlOk=0,vlNok=0,vlPending=0;
+    const issues=[];
+    rows.forEach((r,ri)=>{
+      if(r.classList.contains('ok')){vlOk++}
+      else if(r.classList.contains('nok')){
+        vlNok++;
+        const label=checks[ri].l;
+        const obs=r.querySelector('.check-obs').value;
+        issues.push(label+(obs?' — '+obs:''));
+      }
+      else{vlPending++}
+    });
+    totalOk+=vlOk;totalNok+=vlNok;totalPending+=vlPending;
+    const badge=vlNok>0?'nok':vlPending>0?'pending':'ok';
+    const badgeText=vlNok>0?vlNok+' non conforme(s)':vlPending>0?vlPending+' non vérifié(s)':'Tout conforme';
+    detailsHtml+=`<div class="synthese-vl-block"><div class="synthese-vl-title">${v.n} — ${v.im} <span class="synthese-vl-badge ${badge}">${badgeText}</span></div>`;
+    if(issues.length>0){
+      detailsHtml+=`<div class="synthese-issues">`;
+      issues.forEach(iss=>detailsHtml+=`❌ ${iss}<br>`);
+      detailsHtml+=`</div>`;
+    }
+    detailsHtml+=`</div>`;
+  });
+  const totalAll=totalOk+totalNok+totalPending;
+  document.getElementById('synthese-stats').innerHTML=
+    `<div class="stat-box green"><div class="stat-num">${totalOk}</div><div class="stat-label">Conformes</div></div>`+
+    `<div class="stat-box red"><div class="stat-num">${totalNok}</div><div class="stat-label">Non conformes</div></div>`+
+    `<div class="stat-box grey"><div class="stat-num">${totalPending}</div><div class="stat-label">Non vérifiés</div></div>`+
+    `<div class="stat-box grey"><div class="stat-num">${totalAll}</div><div class="stat-label">Total points</div></div>`;
+  document.getElementById('synthese-vl-details').innerHTML=detailsHtml;
+}
+
+// ── NAVIGATION ──
+function goTo(idx){
+  if(idx<0||idx>=VL.length) return;
+  document.querySelectorAll('.vl-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('vl-page-'+idx).classList.add('active');
+  tabsBar.children[idx].classList.add('active');
+  // Scroll tab into view
+  tabsBar.children[idx].scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  currentVL=idx;
+  window.scrollTo({top:0,behavior:'smooth'});
+  // Init sigs if not done
+  initSigsForVL(idx);
+  updCounter();
+}
+
+// ── TOGGLE CHECK ──
+function tog(el){
+  if(el.classList.contains('ok')){el.classList.remove('ok');el.classList.add('nok')}
+  else if(el.classList.contains('nok')){el.classList.remove('nok')}
+  else{el.classList.add('ok')}
+  updCounter();
+  updTabBadges();
+}
+
+function updCounter(){
+  const page=document.getElementById('vl-page-'+currentVL);
+  const done=page.querySelectorAll('.check-row.ok,.check-row.nok').length;
+  document.getElementById('counter').textContent=`${VL[currentVL].n} : ${done} / ${totalPerVL}`;
+}
+
+function updTabBadges(){
+  VL.forEach((_,i)=>{
+    const page=document.getElementById('vl-page-'+i);
+    const tab=tabsBar.children[i];
+    const oks=page.querySelectorAll('.check-row.ok').length;
+    const noks=page.querySelectorAll('.check-row.nok').length;
+    tab.classList.remove('done','has-issue');
+    if(noks>0) tab.classList.add('has-issue');
+    else if(oks===totalPerVL) tab.classList.add('done');
+  });
+}
+
+// ── DATE/TIME ──
+document.getElementById('visit-date').valueAsDate=new Date();
+const now=new Date();
+document.getElementById('visit-time').value=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+
+// ── SIGNATURE PAD ──
+const pads={};
+const initedSigs=new Set();
+
+function initSigsForVL(idx){
+  ['gte-','chauf-','gerant-'].forEach(prefix=>{
+    const id=prefix+idx;
+    if(initedSigs.has(id)) return;
+    initedSigs.add(id);
+    initSig(id);
+  });
+}
+
+function initSig(id){
+  const canvas=document.getElementById('sig-'+id);
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  let drawing=false;
+  function resize(){
+    const rect=canvas.getBoundingClientRect();
+    if(rect.width===0) return;
+    const dpr=window.devicePixelRatio||1;
+    canvas.width=rect.width*dpr;
+    canvas.height=rect.height*dpr;
+    ctx.scale(dpr,dpr);
+    ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#000';
+  }
+  resize();
+  function pos(e){const r=canvas.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top}}
+  function start(e){e.preventDefault();drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)}
+  function move(e){if(!drawing)return;e.preventDefault();const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();canvas.classList.add('has-sig')}
+  function end(){drawing=false}
+  canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);canvas.addEventListener('mouseup',end);canvas.addEventListener('mouseleave',end);
+  canvas.addEventListener('touchstart',start,{passive:false});canvas.addEventListener('touchmove',move,{passive:false});canvas.addEventListener('touchend',end);
+  pads[id]={canvas,ctx,resize,clear(){ctx.clearRect(0,0,canvas.width,canvas.height);canvas.classList.remove('has-sig');resize()}};
+}
+
+function clearSig(id){if(pads[id])pads[id].clear()}
+
+// ── EXPORT PDF ──
+function exportPDF(){
+  // Fill print info blocks with visit data
+  const date=document.getElementById('visit-date').value;
+  const time=document.getElementById('visit-time').value;
+  const lieu=document.getElementById('visit-lieu').value;
+  VL.forEach((_,i)=>{
+    const el=document.getElementById('print-info-'+i);
+    if(el) el.innerHTML=`<span><strong>Date :</strong> ${date}</span><span><strong>Heure :</strong> ${time}</span><span><strong>Lieu :</strong> ${lieu||'—'}</span>`;
+  });
+  const synthInfo=document.getElementById('print-info-synthese');
+  if(synthInfo) synthInfo.innerHTML=`<span><strong>Date :</strong> ${date}</span><span><strong>Heure :</strong> ${time}</span><span><strong>Lieu :</strong> ${lieu||'—'}</span>`;
+
+  // Update synthese data
+  updateSynthese();
+
+  // Init all sigs before print
+  VL.forEach((_,i)=>initSigsForVL(i));
+  if(!synthSigsInited){synthSigsInited=true;initSig('gte-synth');initSig('gerant-synth')}
+
+  setTimeout(()=>window.print(),200);
+}
+
+// Init first VL sigs
+initSigsForVL(0);
+updCounter();
+</script>
+</body>
+</html>
